@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "syntax.tab.h": "c",
+        "syntaxtree.h": "c",
+        "type_traits": "cpp",
+        "cmath": "cpp",
+        "limits": "cpp",
+        "semantic.h": "c",
+        "typeinfo": "c",
+        "stdlib.h": "c",
+        "symbol_table.h": "c",
+        "stack.h": "c"
+    }
+}

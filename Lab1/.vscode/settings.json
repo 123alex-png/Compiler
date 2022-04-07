@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "syntax.tab.h": "c",
+        "syntaxtree.h": "c"
+    }
+}
