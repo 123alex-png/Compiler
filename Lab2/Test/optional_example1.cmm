@@ -1,21 +1,8 @@
-int func(int b); 
+int func(int a); 
 int func(int a)  
 { 
-   struct{
-      struct{
-         int x, y;
-      } x;
-   } z;
-   struct{
-      struct{
-         int a, b;
-      } a;
-   } c;
-   x = c;
-   return -1;
+   return 1; 
 } 
 int main() 
 { 
-   float z = 1.0;
-   func(z);
 }
