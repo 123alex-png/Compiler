@@ -1,6 +1,6 @@
 #include "semantic.h"
 #include "stack.h"
-#include <assert.h>
+#include "common.h"
 // #include "symbol_table.h"
 extern ScopeList scope_stack[0x3fff+1];
 static ScopeList global_sc;
@@ -9,7 +9,7 @@ void Program(Node *cur){
     if(cur == NULL) return;
     global_sc = create_scope();
     child_node *children = get_childs(cur);
-    assert(cur->right_num == 1);
+    Assert(cur->right_num == 1);
     ExtDefList(children->childs[0]);
     check_fundec();
     delete_scope();
@@ -19,7 +19,7 @@ void Program(Node *cur){
 void ExtDefList(Node *cur){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
-    assert(cur->right_num == 2);
+    Assert(cur->right_num == 2);
     ExtDef(children->childs[0]);
     ExtDefList(children->childs[1]);
 }
@@ -32,30 +32,30 @@ void ExtDef(Node *cur){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     // int num = children->num;
-    assert(0 == strcmp(children->childs[0]->name, "Specifier"));
+    Assert(0 == strcmp(children->childs[0]->name, "Specifier"));
     Type type = Specifier(children->childs[0]);
     if(cur->right_num == 2){//(2)
-        assert(0 == strcmp(children->childs[1]->name, "SEMI"));
+        Assert(0 == strcmp(children->childs[1]->name, "SEMI"));
     }
     else{
-        assert(cur->right_num == 3);
+        Assert(cur->right_num == 3);
         if(0 == strcmp(children->childs[1]->name, "ExtDecList")){//(1)
-            assert(0 == strcmp(children->childs[2]->name, "SEMI"));
+            Assert(0 == strcmp(children->childs[2]->name, "SEMI"));
             ExtDecList(children->childs[1], type);
         }
         else{
             if(0 == strcmp(children->childs[2]->name, "CompSt")){//(3)define
-                assert(0 == strcmp(children->childs[1]->name, "FunDec"));
+                Assert(0 == strcmp(children->childs[1]->name, "FunDec"));
                 FunDec(children->childs[1], type, 1);
                 CompSt(children->childs[2], type);
                 delete_scope();
             }
             else if(0 == strcmp(children->childs[2]->name, "SEMI")){//(4)declare
-                assert(0 == strcmp(children->childs[1]->name, "FunDec"));
+                Assert(0 == strcmp(children->childs[1]->name, "FunDec"));
                 FunDec(children->childs[1], type, 0);
             }
             else{
-                assert(0);
+                Assert(0);
             }
             
         }
@@ -68,12 +68,12 @@ void ExtDecList(Node *cur, Type type){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     // int num = children->num;
-    assert(0 == strcmp(children->childs[0]->name, "VarDec"));
+    Assert(0 == strcmp(children->childs[0]->name, "VarDec"));
     if(cur->right_num == 1){//(1)
         VarDec(children->childs[0], type, NULL);
     }
     else{//(2)
-        assert(cur->right_num == 3);
+        Assert(cur->right_num == 3);
         VarDec(children->childs[0], type, NULL);
         ExtDecList(children->childs[2], type);
     }
@@ -93,13 +93,13 @@ Type Specifier(Node *cur){
             ret->u.basic = BASIC_INT;
         }
         else{
-            assert(0 == strcmp(t->type_content, "float"));
+            Assert(0 == strcmp(t->type_content, "float"));
             ret->u.basic = BASIC_FLOAT;
         }
         return ret;
     }
     //(2)
-    assert(0 == strcmp(children->childs[0]->name, "StructSpecifier"));
+    Assert(0 == strcmp(children->childs[0]->name, "StructSpecifier"));
     return StructSpecifier(children->childs[0]);
 }
 
@@ -110,7 +110,7 @@ Type StructSpecifier(Node *cur){
     Type ret = NULL;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(0 == strcmp(children->childs[0]->name, "STRUCT"));
+    Assert(0 == strcmp(children->childs[0]->name, "STRUCT"));
     if(cur->right_num == 5){//(1)
         char *tag_name = NULL;
         Node *q = find_child(cur, "OptTag");
@@ -132,7 +132,7 @@ Type StructSpecifier(Node *cur){
         if(tag_name) {
             hash_insert(new_field, global_sc);
         }
-        // assert(0 == strcmp(children->childs[num-2]->name, "DefList"));
+        // Assert(0 == strcmp(children->childs[num-2]->name, "DefList"));
         Node *w = find_child(cur, "DefList");
         if(w){
             create_scope();
@@ -143,9 +143,9 @@ Type StructSpecifier(Node *cur){
         ret->u.structure = new_field;
     }
     else{//(2)
-        assert(cur->right_num == 2);
+        Assert(cur->right_num == 2);
         char *tag_name = Tag(children->childs[1]);
-        assert(tag_name);
+        Assert(tag_name);
         FieldList field = find(tag_name);
         if(!field || !field->type.has_define){
             semantic_error(17, cur->row, tag_name, NULL);
@@ -179,7 +179,7 @@ FieldList VarDec(Node *cur, Type type, FieldList field){
     FieldList ret;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     if(num == 1){//(1)
         char *name = children->childs[0]->type_content;
         if(field && field->type.kind == STRUCTURE_TAG && find_member_in_structure(field, name)){
@@ -226,7 +226,7 @@ void FunDec(Node *cur, Type type, int is_def){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     char *name = children->childs[0]->type_content;
     FieldList entry = find(name);
     FieldList f = (FieldList)malloc(sizeof(struct FieldList_));
@@ -247,7 +247,7 @@ void FunDec(Node *cur, Type type, int is_def){
         VarList(children->childs[2], f);
     }
     else{
-        assert(num == 3);
+        Assert(num == 3);
         f->type.u.function.argc = 0;
         f->type.u.function.argv = NULL;
     }
@@ -275,11 +275,11 @@ void VarList(Node *cur, FieldList field){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
-    assert(0 == strcmp(children->childs[0]->name, "ParamDec"));
+    Assert(num == cur->right_num);
+    Assert(0 == strcmp(children->childs[0]->name, "ParamDec"));
     struct func *f = &field->type.u.function;
     FieldList arg = ParamDec(children->childs[0]);
-    assert(arg);
+    Assert(arg);
     FieldList t = f->argv;
     if(!t){
         f->argv = arg;
@@ -299,7 +299,7 @@ void VarList(Node *cur, FieldList field){
         VarList(children->childs[2], field);
     }
     else{
-        assert(num == 1);
+        Assert(num == 1);
     }
 }
 
@@ -308,9 +308,9 @@ FieldList ParamDec(Node *cur){
     if(cur == NULL) return NULL;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     Type type = Specifier(children->childs[0]);
-    assert(type);
+    Assert(type);
     return VarDec(children->childs[1], type, NULL);
 }
 
@@ -319,7 +319,7 @@ void CompSt(Node *cur, Type type){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    // assert(num == cur->right_num);//存疑
+    // Assert(num == cur->right_num);//存疑
     Node *n1 = find_child(cur, "DefList"), *n2 = find_child(cur, "StmtList");
     DefList(n1, NULL);
     StmtList(n2, type);
@@ -330,7 +330,7 @@ void StmtList(Node *cur, Type type){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    // assert(num == cur->right_num);//存疑
+    // Assert(num == cur->right_num);//存疑
     Node *n1 = find_child(cur, "Stmt"), *n2 = find_child(cur, "StmtList");
     Stmt(n1, type);
     StmtList(n2, type);
@@ -346,7 +346,7 @@ void Stmt(Node *cur, Type type){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     if(num == 2){//1
         Exp(children->childs[0]);
     }
@@ -357,14 +357,14 @@ void Stmt(Node *cur, Type type){
     }
     else if(num == 3){//3
         Type t = Exp(children->childs[1]);
-        // assert(t);
+        // Assert(t);
         if(check_type(t, type) == 0){
             semantic_error(8, cur->row, NULL, NULL);
         }
     }
     else if(num == 7){//5
         Type t = Exp(children->childs[2]);
-        assert(t);
+        Assert(t);
         if(!(t->kind == BASIC && t->u.basic == BASIC_INT)){
             semantic_error(7, cur->row, NULL, NULL);
         }
@@ -372,9 +372,9 @@ void Stmt(Node *cur, Type type){
         Stmt(children->childs[6], type);
     }
     else {  //4 or 6
-        assert(num == 5);
+        Assert(num == 5);
         Type t = Exp(children->childs[2]);
-        // assert(t);
+        // Assert(t);
         if(t && !(t->kind == BASIC && t->u.basic == BASIC_INT)){
             semantic_error(7, cur->row, NULL, NULL);
         }
@@ -387,7 +387,7 @@ void DefList(Node *cur, FieldList field){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    // assert(num == cur->right_num);
+    // Assert(num == cur->right_num);
     Node *n1 = find_child(cur, "Def"), *n2 = find_child(cur, "DefList");
     Def(children->childs[0], field);
     DefList(children->childs[1], field);
@@ -398,9 +398,9 @@ void Def(Node *cur, FieldList field){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     Type type = Specifier(children->childs[0]);
-    // assert(type);
+    // Assert(type);
     if(type){
         DecList(children->childs[1], type, field);
     }
@@ -412,14 +412,14 @@ void DecList(Node *cur, Type type, FieldList field){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     Dec(children->childs[0], type, field);
     if(num == 3){ 
-        // assert(num == 3);
+        // Assert(num == 3);
         DecList(children->childs[2], type, field);
     }
     else{
-        assert(num == 1);
+        Assert(num == 1);
     }
 }
 
@@ -429,7 +429,7 @@ void Dec(Node *cur, Type type, FieldList field){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     FieldList f = VarDec(children->childs[0], type, field);
     if(field && field->type.kind == STRUCTURE_TAG){
         if(f){
@@ -443,9 +443,9 @@ void Dec(Node *cur, Type type, FieldList field){
         }
     }
     if(num == 3){
-        assert(0 == strcmp(children->childs[2]->name, "Exp"));
+        Assert(0 == strcmp(children->childs[2]->name, "Exp"));
         Type exp_type = Exp(children->childs[2]);
-        // assert(exp_type);
+        // Assert(exp_type);
         if(check_type(exp_type, &f->type) == 0){
             semantic_error(5, cur->row, NULL, NULL);
         }
@@ -475,7 +475,7 @@ Type Exp(Node *cur){
     Type ret = NULL;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
+    Assert(num == cur->right_num);
     if(num == 3 && 0 == strcmp(children->childs[0]->name, "Exp") 
         && 0 == strcmp(children->childs[2]->name, "Exp")){
 
@@ -542,7 +542,7 @@ Type Exp(Node *cur){
         }
     }
     else if(num >= 3 && 0 == strcmp(children->childs[1]->name, "LP")){//12,13
-        assert(0 == strcmp(children->childs[0]->name, "ID"));
+        Assert(0 == strcmp(children->childs[0]->name, "ID"));
         FieldList entry = find(children->childs[0]->type_content);
         if(!entry){
             semantic_error(2, cur->row, children->childs[0]->type_content, NULL);
@@ -558,7 +558,7 @@ Type Exp(Node *cur){
             }
         }
         else{//12
-            assert(num == 4);
+            Assert(num == 4);
             FieldList args = Args(children->childs[2]);
             if(check_args(args, entry->type.u.function.argv) == 0){
                 // char t[130];
@@ -625,7 +625,7 @@ Type Exp(Node *cur){
             ret->u.basic = BASIC_INT;
         }
         else{//18
-            assert(0 == strcmp(children->childs[0]->name, "FLOAT"));
+            Assert(0 == strcmp(children->childs[0]->name, "FLOAT"));
             ret->u.basic = BASIC_FLOAT;
         }
     }
@@ -638,8 +638,8 @@ FieldList Args(Node *cur){
     if(cur == NULL) return NULL;
     child_node *children = get_childs(cur);
     int num = children->num;
-    assert(num == cur->right_num);
-    assert(0 == strcmp(children->childs[0]->name, "Exp"));
+    Assert(num == cur->right_num);
+    Assert(0 == strcmp(children->childs[0]->name, "Exp"));
     Type type_arg = Exp(children->childs[0]);
     if(!type_arg) return NULL;
     FieldList ret = (FieldList)malloc(sizeof(struct FieldList_));
@@ -648,7 +648,7 @@ FieldList Args(Node *cur){
         ret->tail = Args(children->childs[2]);
     }
     else{
-        assert(num == 1);
+        Assert(num == 1);
         ret->tail = NULL;
     }
     return ret;
@@ -746,7 +746,7 @@ void semantic_error(int type, int row, const char *name, const char *name1){
 //             i+=8;
 //         }
 //         else{
-//             assert(0);
+//             Assert(0);
 //         }
 //         args = args->tail;
 //         if(args){

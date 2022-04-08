@@ -69,10 +69,10 @@ struct FunDecList_{
 unsigned int hash_val(char* name);
 void hash_insert(FieldList field, ScopeList cur);
 FieldList find(char* name);
-int check_function_define(FieldList old, FieldList new);
-FieldList find_member_in_structure(FieldList f, char *var_name);
-int check_type(Type a, Type b);
-int check_args(FieldList a, FieldList b);
+int check_function_define(FieldList old, FieldList new);//检查函数的声明和定义是否一致
+FieldList find_member_in_structure(FieldList f, char *var_name);//查找结构体中的成员
+int check_type(Type a, Type b);//检查两个变量的类型是否一致
+int check_args(FieldList a, FieldList b);//检查两个函数的参数是否一致
 
 //要求2.1新增代码
 void func_insert(FieldList field, int row);

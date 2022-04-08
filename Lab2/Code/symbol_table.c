@@ -1,7 +1,7 @@
 #include "symbol_table.h"
 #include "semantic.h"
 #include "stack.h"
-#include <assert.h>
+#include "common.h"
 
 unsigned int hash_val(char* name){ 
     unsigned int val = 0, i; 
@@ -74,8 +74,8 @@ int check_function_define(FieldList old, FieldList new){
 }
 
 int check_type_dfs(Type a, Type b, int depth){
-    // assert(a->kind != STRUCTURE_TAG);
-    // assert(b->kind != STRUCTURE_TAG);
+    // Assert(a->kind != STRUCTURE_TAG);
+    // Assert(b->kind != STRUCTURE_TAG);
     if(depth > 100000) return 1;
     if(!a || !b) return 1;
     if(a->kind != b->kind) return 0;
@@ -99,7 +99,7 @@ int check_type_dfs(Type a, Type b, int depth){
     if(a->kind == STRUCTURE){
         return check_type_dfs(&a->u.structure->type, &b->u.structure->type, depth+1);
     }
-    assert(0);
+    Assert(0);
 }
 
 int check_type(Type a, Type b){
@@ -119,14 +119,14 @@ int check_args(FieldList a, FieldList b){
 
 //要求2.2新增代码
 void delete_node(SymbolNode node){
-    assert(node);
+    Assert(node);
     SymbolNode nxt = node->next_node, prv = node->prev_node;
     void *head = hash_table[node->hash_val];
     if(node == head){
         hash_table[node->hash_val] = nxt;
     }
     else{
-        assert(prv);
+        Assert(prv);
         prv->next_node = nxt;
         if(nxt){
             nxt->prev_node = prv;
@@ -138,17 +138,17 @@ void delete_node(SymbolNode node){
 //要求2.1新增代码
 void func_insert(FieldList field, int row){
     FunDecList new_dec = (FunDecList)malloc(sizeof(struct FunDecList_));
-    assert(new_dec);
+    Assert(new_dec);
     field->type.u.function.p = new_dec;
     strcpy(new_dec->name, field->name);
     new_dec->row = row;
     new_dec->has_def = field->type.has_define;
     if(!fun_dec_head){
-        assert(!fun_dec_tail);
+        Assert(!fun_dec_tail);
         fun_dec_head = fun_dec_tail = new_dec;
     }
     else{
-        assert(fun_dec_tail);
+        Assert(fun_dec_tail);
         fun_dec_tail->next = new_dec;
         fun_dec_tail = new_dec;
     }
@@ -156,7 +156,7 @@ void func_insert(FieldList field, int row){
 }
 //要求2.1新增代码
 void update_row(FunDecList p, int row){
-    assert(p);
+    Assert(p);
     p->row = row;
 }
 
@@ -181,7 +181,7 @@ ScopeList create_scope(){
 
 //要求2.2新增代码
 void delete_scope(){
-    assert(!scope_stack_empty());
+    Assert(!scope_stack_empty());
     ScopeList t = scope_stack_top();
     SymbolNode cur = t->head;
     for(; cur; cur = cur->tail_node){

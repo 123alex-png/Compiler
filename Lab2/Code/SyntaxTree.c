@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <assert.h>
+#include "common.h"
 
 Node *get_node(const char *name, const char *val, enum TYPE type, int row){
     Node *ret = (Node *)malloc(sizeof(Node));
@@ -44,7 +44,7 @@ Node *new_node(const char *name, int row, int num, ...){
         Node *cur = va_arg(ap, Node *);
         ret->child = cur;
         for(int i = 1; i < num; i++){
-            assert(cur);
+            Assert(cur);
             cur->nxt = va_arg(ap, Node *);
             if(cur->nxt){
                 cur = cur->nxt;
