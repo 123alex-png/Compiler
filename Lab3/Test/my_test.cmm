@@ -1,0 +1,21 @@
+int func(int b); 
+int func(int a)  
+{ 
+   struct{
+      struct{
+         int x, y;
+      } x;
+   } z;
+   struct{
+      struct{
+         int a, b;
+      } a;
+   } c;
+   z = c;
+   return -1;
+} 
+int main() 
+{ 
+   float z = 1.0;
+   func(z);
+}
