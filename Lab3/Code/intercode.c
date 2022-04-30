@@ -29,6 +29,7 @@ void delete_ir(InterCodes ir){//没有free
     }
 }
 
+
 InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char *relop){
     InterCode ret = (InterCode)malloc(sizeof(struct InterCode_));
     ret->kind = kind;

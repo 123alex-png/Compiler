@@ -70,7 +70,7 @@ struct InterCodes_ {
     InterCodes *prev, *next;
 };
 InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char* relop);  
-Operand new_operand(int kind, long long val, int number, char* name);
+Operand new_operand(int kind, int val, int number, char* name);
 Operand new_temp();
 Operand new_addr();
 Operand new_label();

@@ -32,8 +32,8 @@ void tr_Def(Node *root);
 void tr_DecList(Node *root);
 void tr_Dec(Node *root);
 
-Type tr_Exp(Node *root, Operand op);
-FieldList tr_Args(Node *root);
+void tr_Exp(Node *root, Operand op);
+void tr_Args(Node *root, int is_write);
 /*********************************/
 void array_copy(Operand dst, Operand src);
 

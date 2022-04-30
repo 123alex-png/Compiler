@@ -313,7 +313,7 @@ void tr_Exp(Node *cur, Operand place){
             place->size = entry->type.u.array.size;
         }
         else if(entry->type.kind == STRUCTURE){//TBD
-
+        
         }
         else if((num == 2 && 0 == strcmp(children->childs[0]->name, "NOT"))
         || (num == 3 && 0 == strcmp(children->childs[1]->name, "RELOP"))
@@ -343,7 +343,149 @@ void tr_Exp(Node *cur, Operand place){
                 new_ir(IR_SUB, place, op_zero, t, 0, NULL);
             }
         }
-        else 
+        else if(num == 3 && 0 == strcmp(children->childs[1]->name, "ASSIGNOP")){//1
+            Operand dst = new_temp();
+            tr_Exp(children->childs[0], dst);
+            Operand src = new_temp();
+            tr_Exp(children->childs[2], src);
+            if(dst->kind ==  OP_ADDRESS || dst->kind == OP_ARRAY){//有疑问
+                if(src->kind == OP_ADDRESS || src->kind == OP_ARRAY){
+                    array_copy(dst, src);
+                }
+                else{
+                    Assert(dst->kind == OP_ADDRESS);
+                    new_ir(IR_STORE, dst, src, NULL, 0, NULL);
+                }
+            }
+            else{
+                if(src->kind == OP_ADDRESS){
+                    load_val(src);
+                    new_ir(IR_ASSIGN, dst, src, NULL, 0, NULL);
+                }
+            }
+            place->kind = src->kind;
+            place->u = src->u;
+        }
+        else if(num == 3 &&
+        ( 0 == strcmp(children->childs[1]->name, "PLUS")
+        ||0 == strcmp(children->childs[1]->name, "MINUS")
+        ||0 == strcmp(children->childs[1]->name, "STAR")
+        ||0 == strcmp(children->childs[1]->name, "DIV")
+        )){//5,6,7,8
+            Operand t1 = new_temp();
+            tr_Exp(children->childs[0], t1);
+            if(t1->kind == OP_ADDRESS){
+                load_val(t1);
+            }
+            Operand t2 = new_temp();
+            tr_Exp(children->childs[2], t2);
+            if(t2->kind == OP_ADDRESS){
+                load_val(t2);
+            }
+            int kind;
+            int val;
+            if(0 == strcmp(children->childs[1]->name, "PLUS")){
+                kind = IR_ADD;
+                val = t1->u.const_value + t2->u.const_value;
+            }
+            else if(0 == strcmp(children->childs[1]->name, "MINUS")){
+                kind = IR_SUB;
+                val = t1->u.const_value - t2->u.const_value;
+            }
+            else if(0 == strcmp(children->childs[1]->name, "STAR")){
+                kind = IR_MUL;
+                val = t1->u.const_value * t2->u.const_value;
+            }
+            else{
+                kind = IR_DIV;
+                val = t1->u.const_value / t2->u.const_value;
+            }
+            if(t1->kind == OP_CONSTANT && t2->kind == OP_CONSTANT){
+                place->kind = OP_CONSTANT;
+                place->u.const_value = val;
+            }
+            else{
+                new_ir(kind, place, t1, t2, 0, NULL);
+            }
+        }
+        else if(num == 3 && 0 == strcmp(children->childs[0]->name, "LP")){//9
+            tr_Exp(children->childs[1], place);
+        }
+        //     | NOT Exp                 11        
+        //     | ID LP Args RP           12          
+        //     | ID LP RP                13         
+        //     | Exp LB Exp RB           14 
+        //     | Exp DOT ID              15      
+        //     | ID                      16
+        else if(num == 4 && 0 == strcmp(children->childs[1]->name, "LP")){//12
+            FieldList entry = find(children->childs[0]->type_content);
+            Assert(entry);
+            if(0 == strcmp(children->childs[0]->type_content, "write")){
+                tr_Args(children->childs[2], 1);
+                place->kind = OP_CONSTANT;
+                place->u.const_value = 0;
+            }
+            else{
+                tr_Args(children->childs[2], 0);
+                Operand t = new_operand(OP_FUNCTION, 0, 0, entry->name);
+                new_ir(IR_CALL, place, t, NULL, 0, NULL);
+            }
+        }
+        else if(num == 3 && 0 == strcmp(children->childs[1]->name, "LP")){//13
+            FieldList entry = find(children->childs[0]->type_content);
+            Assert(entry);
+            if(0 == strcmp(children->childs[0]->type_content, "read")){
+                new_ir(IR_READ, place, NULL, NULL, 0, NULL);
+            }
+            else{
+                Operand t = new_operand(OP_FUNCTION, 0, 0, entry->name);
+                new_ir(IR_CALL, place, t, NULL, 0, NULL);
+            }
+        }
+        else if(num == 4 && 0 == strcmp(children->childs[1]->name, "LB")){//14
+            Operand t1 = new_temp();
+            tr_Exp(children->childs[0], t1);
+            Operand t2 = new_temp();
+            tr_Exp(children->childs[2], t2);
+            Operand offset = new_temp();
+            int width = get_size(t1->type);
+            if(t2->kind == OP_CONSTANT){
+                offset->kind = OP_CONSTANT;
+                offset->u.const_value = width * t2->u.const_value;
+            }
+            else{
+                if(t2->kind == OP_ADDRESS){
+                    load_val(t2);
+                }
+                Operand op_width = new_operand(OP_CONSTANT, width, 0, NULL);
+                new_ir(IR_MUL, offset, t2, op_width, 0, NULL);
+            }
+            place->kind = OP_ADDRESS;
+            place->u.addr_no = addr_no++;
+            if(t1->kind == OP_ARRAY){
+                if(offset->u.const_value == 0){
+                    new_ir(IR_ADDR, place, t1, NULL, 0, NULL);
+                }
+                else{
+                    Operand base = new_addr();
+                    new_ir(IR_ADDR, base, t1, NULL, 0, NULL);    
+                    new_ir(IR_ADD, place, base, offset, 0, NULL);
+                }
+            }
+            else{
+                Assert(t1->kind == OP_ADDRESS);
+                new_ir(IR_ADD, place, t1, offset, 0, NULL);
+            }
+            if(t1->type->kind == BASIC){
+                place->type = NULL;
+                place->size = 0;
+            }
+            else{
+                Assert(t1->type->kind == ARRAY);
+                place->type = t1->type->u.array.elem;
+                place->size = t1->type->u.array.size;
+            }
+        }
     }
     return ret;
 }
