@@ -2,7 +2,7 @@
 #include "semantic.h"
 #include "stack.h"
 #include "common.h"
-
+int var_cnt, array_cnt, func_cnt, struct_cnt;
 unsigned int hash_val(char* name){ 
     unsigned int val = 0, i; 
     for (; *name; ++name){ 
@@ -24,6 +24,18 @@ void hash_insert(FieldList field, ScopeList cur){
     hash_table[v] = new_node;
     if(obj){
         obj->prev_node = new_node;
+    }
+    if(field->type.kind == BASIC){
+        field->no = var_cnt++;
+    }
+    else if(field->type.kind == ARRAY){
+        field->no = array_cnt++;
+    }
+    else if(field->type.kind == FUNCTION){
+        field->no = func_cnt++;
+    }
+    else if(field->type.kind == STRUCTURE){
+        field->no = struct_cnt++;
     }
     //要求2.2新增代码
     // ScopeList cur = scope_stack_top();

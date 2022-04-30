@@ -43,6 +43,8 @@ struct FieldList_{
   struct Type_ type;  // 域的类型  
   FieldList tail;  // 下一个域，用于讲义中的上下链表
   ScopeList scope;//属于哪个作用域
+  int no;
+  int is_arg;
 };
 
 struct SymbolNode_{

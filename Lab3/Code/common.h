@@ -17,4 +17,6 @@
   } while (0)
 #endif
 
+#define min(x, y) (x < y ? x: y)
+
 #endif

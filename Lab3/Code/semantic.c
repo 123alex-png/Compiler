@@ -5,9 +5,39 @@
 extern ScopeList scope_stack[0x3fff+1];
 static ScopeList global_sc;
 //Program: ExtDefList
+
+void insert_function(char *name){
+    FieldList f = (FieldList)malloc(sizeof(struct FieldList_));
+    f->is_arg = 0;
+    strcpy(f->name, name);
+    f->type.has_define = 1;
+    f->type.kind = FUNCTION;
+    f->type.u.function.argc = 0;
+    f->tail = NULL;
+    Type int_type = (Type)malloc(sizeof(struct Type_));
+    int_type->kind = BASIC;
+    int_type->u.basic = BASIC_INT;
+    f->type.u.function.return_type = int_type;
+    if(0 == strcmp(name, "write")){
+        FieldList arg = (FieldList)malloc(sizeof(struct FieldList_));
+        arg->is_arg = 0;
+        arg->tail = NULL;
+        arg->type = *int_type;
+        f->type.u.function.argc = 1;
+        f->type.u.function.argv = arg;
+    }
+    else{
+        f->type.u.function.argc = 0;
+        f->type.u.function.argv = NULL;
+    }
+    hash_insert(f, global_sc);
+}
+
 void Program(Node *cur){
     if(cur == NULL) return;
     global_sc = create_scope();
+    insert_function("read");
+    insert_function("write");
     child_node *children = get_childs(cur);
     Assert(cur->right_num == 1);
     ExtDefList(children->childs[0]);
@@ -124,6 +154,7 @@ Type StructSpecifier(Node *cur){
         ret = (Type)malloc(sizeof(struct Type_));
         ret->kind = STRUCTURE;
         FieldList new_field = (FieldList)malloc(sizeof(struct FieldList_));
+        new_field->is_arg = 0;
         new_field->tail = NULL;
         if(tag_name) strcpy(new_field->name, tag_name);
         new_field->type.kind = STRUCTURE_TAG;
@@ -187,6 +218,7 @@ FieldList VarDec(Node *cur, Type type, FieldList field){
             return NULL;
         }
         ret = (FieldList)malloc(sizeof(struct FieldList_));
+        ret->is_arg = 0;
         strcpy(ret->name, name);
         ret->type = *type;
         ret->tail = NULL;
@@ -232,6 +264,7 @@ void FunDec(Node *cur, Type type, int is_def){
     FieldList f = (FieldList)malloc(sizeof(struct FieldList_));
     f->tail = NULL;
     strcpy(f->name, name);
+    f->is_arg = 0;
     f->type.kind = FUNCTION;
     f->type.u.function.return_type = type;
     f->type.u.function.argv =NULL;
@@ -279,6 +312,7 @@ void VarList(Node *cur, FieldList field){
     Assert(0 == strcmp(children->childs[0]->name, "ParamDec"));
     struct func *f = &field->type.u.function;
     FieldList arg = ParamDec(children->childs[0]);
+    arg->is_arg = 1;
     Assert(arg);
     FieldList t = f->argv;
     if(!t){
@@ -431,6 +465,7 @@ void Dec(Node *cur, Type type, FieldList field){
     int num = children->num;
     Assert(num == cur->right_num);
     FieldList f = VarDec(children->childs[0], type, field);
+    f->is_arg = 0;
     if(field && field->type.kind == STRUCTURE_TAG){
         if(f){
             FieldList t = field->type.u.structure;
@@ -643,6 +678,7 @@ FieldList Args(Node *cur){
     Type type_arg = Exp(children->childs[0]);
     if(!type_arg) return NULL;
     FieldList ret = (FieldList)malloc(sizeof(struct FieldList_));
+    ret->is_arg = 0;
     ret->type = *type_arg;
     if(num == 3){//1
         ret->tail = Args(children->childs[2]);
