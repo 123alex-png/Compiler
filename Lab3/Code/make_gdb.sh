@@ -1,5 +1,5 @@
 #!/bin/bash
 
 gdb  ./parser \
- -ex "break VarDec"\
- -ex "run ~/test_l2/tests/m22.cmm"
+ -ex "break main"\
+ -ex "run ../Test/test1.cmm"

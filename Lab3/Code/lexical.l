@@ -176,7 +176,7 @@ WHITESPACE  [ \t\r\n]+
 }
 
 {RELOP} {
-    yylval.node = get_node("RELOP", NULL, TYPE_OTHER, yylineno);
+    yylval.node = get_node("RELOP", yytext, TYPE_OTHER, yylineno);
     print("RELOP");
     return RELOP;
 }

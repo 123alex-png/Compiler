@@ -1,5 +1,5 @@
 #include "translator.h"
-
+#include "common.h"
 extern InterCodes ir_head, ir_tail;
 // extern int var_cnt, array_cnt, func_cnt, struct_cnt;
 extern int temp_no, addr_no, label_no;
@@ -132,7 +132,7 @@ void tr_CompSt(Node *cur){
 }
 
 // StmtList: Stmt StmtList 
-void StmtList(Node *cur, Type type){
+void tr_StmtList(Node *cur){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
@@ -280,8 +280,7 @@ void tr_Dec(Node *cur){
 //     | BASIC_INT                     17     
 //     | BASIC_FLOAT                   18   
 void tr_Exp(Node *cur, Operand place){
-    if(cur == NULL) return NULL;
-    Type ret = NULL;
+    if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
     Assert(num == cur->right_num);
@@ -487,34 +486,96 @@ void tr_Exp(Node *cur, Operand place){
             }
         }
     }
-    return ret;
 }
 
 // Args: Exp COMMA Args  
 //     | Exp
-FieldList Args(Node *cur){
-    if(cur == NULL) return NULL;
+void tr_Args(Node *cur, int is_write){
+    if(cur == NULL) return;
     child_node *children = get_childs(cur);
     int num = children->num;
     Assert(num == cur->right_num);
     Assert(0 == strcmp(children->childs[0]->name, "Exp"));
-    Type type_arg = Exp(children->childs[0]);
-    if(!type_arg) return NULL;
-    FieldList ret = (FieldList)malloc(sizeof(struct FieldList_));
-    ret->type = *type_arg;
-    if(num == 3){//1
-        ret->tail = Args(children->childs[2]);
+    if(num == 3){
+        Assert(!is_write);
+        tr_Args(children->childs[2], 0);
+    }
+    Operand t = new_temp();
+    tr_Exp(children->childs[0], t);
+    if(is_write){
+        if(t->kind == OP_ADDRESS){
+            load_val(t);
+        }
+        new_ir(IR_WRITE, t, NULL, NULL, 0, NULL);
     }
     else{
-        Assert(num == 1);
-        ret->tail = NULL;
+        if(t->kind == OP_ARRAY){
+            t = get_addr(t);
+        }
+        else if(t->kind == OP_ADDRESS){
+            if(t->type == NULL){
+                load_val(t);
+            }
+        }
+        new_ir(IR_ARG, t, NULL, NULL, 0, NULL);
     }
-    return ret;
+}
+
+//Cond: Exp RELOP EXP 1
+//     |NOT Exp       2
+//     |Exp AND Exp   3
+//     |Exp OR Exp    4
+//     |Other         5
+void tr_Cond(Node *cur, Operand true_label, Operand false_label){
+    if(cur == NULL);
+    child_node *children = get_childs(cur);
+    int num = children->num;
+    Assert(num == cur->right_num);
+    if(0 == strcmp(children->childs[1]->name, "RELOP")){//1
+        Operand t1 = new_temp();
+        tr_Exp(children->childs[0], t1);
+        if(t1->kind == OP_ADDRESS){
+            load_val(t1);
+        }
+        Operand t2 = new_temp();
+        tr_Exp(children->childs[2], t2);
+        if(t2->kind == OP_ADDRESS){
+            load_val(t2);
+        }
+        char *op = children->childs[1]->type_content;
+        new_ir(IR_IF_GOTO, t1, t2, true_label, 0, op);
+        new_ir(IR_GOTO, false_label, NULL, NULL, 0, NULL);
+    }
+    else if(0 == strcmp(children->childs[0]->name, "NOT")){//2
+        tr_Cond(children->childs[1], false_label, true_label);
+    }
+    else if(0 == strcmp(children->childs[1]->name, "AND")){//3
+        Operand l1 = new_label();
+        tr_Cond(children->childs[0], l1, false_label);
+        new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
+        tr_Cond(children->childs[2], true_label, false_label);
+    }
+    else if(0 == strcmp(children->childs[1]->name, "OR")){//4
+        Operand l1 = new_label();
+        tr_Cond(children->childs[0], true_label, l1);
+        new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
+        tr_Cond(children->childs[2], true_label, false_label);
+    }
+    else{
+        Operand t = new_temp();
+        tr_Exp(cur, t);
+        if(t->kind == OP_ADDRESS){
+            load_val(t);
+        }
+        Operand zero_op = new_operand(OP_CONSTANT, 0, 0, NULL);
+        new_ir(IR_IF_GOTO, t, zero_op, true_label, 0, "!=");
+        new_ir(IR_GOTO, false_label, NULL, NULL, 0, NULL);
+    }
 }
 
 void array_copy(Operand dst, Operand src){
     Operand dst_addr = get_addr(dst), src_addr = get_addr(src);
-    int dst_size = get_size(&dst->type) * dst->size, src_size = get_size(&src->type) * src->size;
+    int dst_size = get_size(dst->type) * dst->size, src_size = get_size(src->type) * src->size;
     int size = min(dst_size, src_size);
     Operand left = new_addr(), right = new_addr(), tmp = new_temp();
     // Operand tmp = new_temp();

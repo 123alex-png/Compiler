@@ -1053,7 +1053,7 @@ case 14:
 YY_RULE_SETUP
 #line 178 "./lexical.l"
 {
-    yylval.node = get_node("RELOP", NULL, TYPE_OTHER, yylineno);
+    yylval.node = get_node("RELOP", yytext, TYPE_OTHER, yylineno);
     print("RELOP");
     return RELOP;
 }

@@ -1,6 +1,3 @@
-struct b{
-  int a = 1;
-};
 int main() {
-  struct b k;
+  int a = 1;
 }

@@ -15,7 +15,8 @@ struct Operand_ {
         int addr_no;
         int arrray_no;
         int temp_no;
-        int func_no;
+        int label_no;
+        char *func_name;
         int struct_no;
     } u; 
     Type type;
@@ -67,7 +68,7 @@ struct InterCode_ {
 
 struct InterCodes_ {
     InterCode code;
-    InterCodes *prev, *next;
+    InterCodes prev, next;
 };
 InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char* relop);  
 Operand new_operand(int kind, int val, int number, char* name);
@@ -78,4 +79,7 @@ Operand new_label();
 void load_val(Operand op);
 int get_size(Type type);
 Operand get_addr(Operand addr);
+
+void print_inter_code(FILE *fp);
+void print_op(Operand op, FILE *fp);
 #endif

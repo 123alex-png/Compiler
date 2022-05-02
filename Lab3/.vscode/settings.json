@@ -12,6 +12,15 @@
         "stack.h": "c",
         "intercode.h": "c",
         "common.h": "c",
-        "translator.h": "c"
+        "translator.h": "c",
+        "bit": "c",
+        "condition_variable": "c",
+        "cstddef": "c",
+        "string": "c",
+        "optional": "c",
+        "memory": "c",
+        "new": "c",
+        "functional": "c",
+        "regex": "c"
     }
 }

@@ -5,7 +5,7 @@
 extern ScopeList scope_stack[0x3fff+1];
 static ScopeList global_sc;
 //Program: ExtDefList
-
+int semantic_error_num = 0;
 void insert_function(char *name){
     FieldList f = (FieldList)malloc(sizeof(struct FieldList_));
     f->is_arg = 0;
@@ -42,7 +42,7 @@ void Program(Node *cur){
     Assert(cur->right_num == 1);
     ExtDefList(children->childs[0]);
     check_fundec();
-    delete_scope();
+    // delete_scope();
 }
 
 // ExtDefList: ExtDef ExtDefList | /*Empty*/ 
@@ -78,7 +78,7 @@ void ExtDef(Node *cur){
                 Assert(0 == strcmp(children->childs[1]->name, "FunDec"));
                 FunDec(children->childs[1], type, 1);
                 CompSt(children->childs[2], type);
-                delete_scope();
+                // delete_scope();
             }
             else if(0 == strcmp(children->childs[2]->name, "SEMI")){//(4)declare
                 Assert(0 == strcmp(children->childs[1]->name, "FunDec"));
@@ -166,9 +166,9 @@ Type StructSpecifier(Node *cur){
         // Assert(0 == strcmp(children->childs[num-2]->name, "DefList"));
         Node *w = find_child(cur, "DefList");
         if(w){
-            create_scope();
+            // create_scope();
             DefList(children->childs[num-2], new_field);
-            delete_scope();
+            // delete_scope();
         }
         
         ret->u.structure = new_field;
@@ -275,7 +275,7 @@ void FunDec(Node *cur, Type type, int is_def){
         hash_insert(f, sc);
         func_insert(f, cur->row);
     }
-    create_scope();
+    // create_scope();
     if(num == 4){//(1)
         VarList(children->childs[2], f);
     }
@@ -385,9 +385,9 @@ void Stmt(Node *cur, Type type){
         Exp(children->childs[0]);
     }
     else if(num == 1){//2
-        create_scope();
+        // create_scope();
         CompSt(children->childs[0], type);
-        delete_scope();
+    //     delete_scope();
     }
     else if(num == 3){//3
         Type t = Exp(children->childs[1]);
@@ -691,6 +691,7 @@ FieldList Args(Node *cur){
 }
 
 void semantic_error(int type, int row, const char *name, const char *name1){
+    semantic_error_num++;
     switch (type)
     {
     case 1:

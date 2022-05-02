@@ -29,6 +29,46 @@ void delete_ir(InterCodes ir){//没有free
     }
 }
 
+Operand new_operand(int kind, int val, int number, char* name){
+    Operand ret = (Operand)malloc(sizeof(struct Operand_));
+    ret->kind = kind;
+    FieldList entry = NULL;
+    switch (kind)
+    {
+    case OP_VARIABLE:
+        entry = find(name);
+        Assert(entry);
+        ret->u.var_no = entry->no;
+        break;
+    case OP_CONSTANT:
+        ret->u.const_value = val;
+        break;
+    case OP_ADDRESS:
+        ret->u.addr_no = number;
+        break;
+    case OP_ARRAY:
+        entry = find(name);
+        Assert(entry);
+        ret->u.arrray_no = entry->no;
+        break;
+    case OP_TEMP:
+        ret->u.temp_no = number;
+        break;
+    case OP_FUNCTION:
+        entry = find(name);
+        Assert(entry);
+        ret->u.func_name = name;
+        break;
+    case OP_LABEL:
+        ret->u.label_no = number;
+        break;
+    case OP_STRUCTURE:
+        ret->u.struct_no = number;
+        break;
+    default:
+        break;
+    }
+}
 
 InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char *relop){
     InterCode ret = (InterCode)malloc(sizeof(struct InterCode_));
@@ -119,4 +159,150 @@ Operand get_addr(Operand addr){
     Operand ret = new_addr();
     new_ir(IR_ADDR, ret, addr, NULL, 0, NULL);
     return ret;
+}
+
+void print_inter_code(FILE *fp){
+    InterCodes cur = ir_head;
+    for(; cur; cur = cur->next){
+        Assert(cur->code);
+        switch(cur->code->kind){
+        case IR_LABEL:
+            fprintf(fp, "LABEL ");
+            print_op(cur->code->u.unitary.op, fp);
+            fprintf(fp, ": ");
+            break;
+        case IR_FUNCTION:
+            fprintf(fp, "FUNCTION");
+            print_op(cur->code->u.unitary.op, fp);
+            fprintf(fp, ": ");
+            break;
+        case IR_ASSIGN:
+            print_op(cur->code->u.assign.left, fp);
+            fprintf(fp, ":=");
+            print_op(cur->code->u.assign.right, fp);
+            break;
+        case IR_ADD:
+            print_op(cur->code->u.biassign.res, fp);
+            fprintf(fp, ":= ");
+            print_op(cur->code->u.biassign.op1, fp);
+            fprintf(fp, "+ ");
+            print_op(cur->code->u.biassign.op2, fp);
+            break;
+        case IR_SUB:
+            print_op(cur->code->u.biassign.res, fp);
+            fprintf(fp, ":= ");
+            print_op(cur->code->u.biassign.op1, fp);
+            fprintf(fp, "- ");
+            print_op(cur->code->u.biassign.op2, fp);
+            break;
+        case IR_MUL:
+            print_op(cur->code->u.biassign.res, fp);
+            fprintf(fp, ":= ");
+            print_op(cur->code->u.biassign.op1, fp);
+            fprintf(fp, "* ");
+            print_op(cur->code->u.biassign.op2, fp);
+            break;
+        case IR_DIV:
+            print_op(cur->code->u.biassign.res, fp);
+            fprintf(fp, ":= ");
+            print_op(cur->code->u.biassign.op1, fp);
+            fprintf(fp, "/ ");
+            print_op(cur->code->u.biassign.op2, fp);
+            break;
+        case IR_ADDR:
+            print_op(cur->code->u.assign.left, fp);
+            fprintf(fp, ":= &");
+            print_op(cur->code->u.assign.right, fp);
+            break;
+        case IR_LOAD:
+            print_op(cur->code->u.assign.left, fp);
+            fprintf(fp, ":= *");
+            print_op(cur->code->u.assign.right, fp);
+            break;
+        case IR_STORE:
+            fprintf(fp, "*");
+            print_op(cur->code->u.assign.left, fp);
+            fprintf(fp, ":= ");
+            print_op(cur->code->u.assign.right, fp);
+            break;
+        case IR_GOTO:
+            fprintf(fp, "GOTO ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        case IR_IF_GOTO:
+            fprintf(fp, "IF ");
+            print_op(cur->code->u.if_goto.op1, fp);
+            fprintf(fp, "%s ", cur->code->u.if_goto.relop);
+            print_op(cur->code->u.if_goto.op2, fp);
+            fprintf(fp, "GOTO ");
+            print_op(cur->code->u.if_goto.op3, fp);
+            break;
+        case IR_RETURN:
+            fprintf(fp, "RETURN ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        case IR_DEC:
+            fprintf(fp, "DEC ");
+            print_op(cur->code->u.dec.op, fp);
+            fprintf(fp, "%d ", cur->code->u.dec.size);
+            break;
+        case IR_ARG:
+            fprintf(fp, "ARG ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        case IR_CALL:
+            print_op(cur->code->u.assign.left, fp);
+            fprintf(fp, ":= CALL ");
+            print_op(cur->code->u.assign.right, fp);
+            break;
+        case IR_PARAM:
+            fprintf(fp, "PARAM ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        case IR_READ:
+            fprintf(fp, "READ ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        case IR_WRITE:
+            fprintf(fp, "WRITE ");
+            print_op(cur->code->u.unitary.op, fp);
+            break;
+        default:
+            Assert(0);
+        }
+        fprintf(fp, "\n");
+    }
+}
+
+void print_op(Operand op, FILE *fp){
+    Assert(op);
+    switch(op->kind){
+    case OP_VARIABLE:
+        fprintf(fp, "v%d ", op->u.var_no);
+        break;
+    case OP_CONSTANT:
+        fprintf(fp, "#%d ", op->u.const_value);
+        break;
+    case OP_ADDRESS:
+        fprintf(fp, "addr%d ", op->u.addr_no);
+        break;
+    case OP_ARRAY:
+        fprintf(fp, "arr%d ", op->u.arrray_no);
+        break;
+    case OP_TEMP:
+        fprintf(fp, "t%d ", op->u.temp_no);
+        break;
+    case OP_FUNCTION:
+        fprintf(fp, "%s ", op->u.func_name);
+        break;
+    case OP_LABEL:
+        fprintf(fp, "label%d ", op->u.label_no);
+        break;
+    case OP_STRUCTURE:
+        fprintf(fp, "struct%d ", op->u.struct_no);
+        break;
+    default:
+        Assert(0);
+    }   
+    
 }

@@ -27,6 +27,9 @@ Node *get_node(const char *name, const char *val, enum TYPE type, int row){
     else if(type == TYPE_CONTENT){
         sscanf(val, "%s", ret->type_content);
     }
+    else if(val){
+        sscanf(val, "%s", ret->type_content);
+    }
     return ret;
 }
 
