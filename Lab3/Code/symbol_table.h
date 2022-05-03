@@ -36,6 +36,7 @@ struct Type_{
     }function;
   }u; 
   int has_define;
+  int size;//
 }; 
  
 struct FieldList_{ 
@@ -45,6 +46,8 @@ struct FieldList_{
   ScopeList scope;//属于哪个作用域
   int no;
   int is_arg;
+  
+  int offset;//结构体成员偏移量
 };
 
 struct SymbolNode_{
@@ -86,4 +89,8 @@ void delete_node(SymbolNode node);
 ScopeList create_scope();
 void delete_scope();
 int is_same_scope(FieldList f);
+
+//要求3.1
+int compute_size(Type type);
+void compute_offset(FieldList field);
 #endif

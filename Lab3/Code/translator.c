@@ -80,7 +80,7 @@ Operand tr_VarDec(Node *cur){
             ret = new_operand(OP_VARIABLE, 0, 0, name);
         }
         else if(entry->type.kind == STRUCTURE){
-            //TBD
+            //似乎不需要
         }
         else{
             Assert(0);
@@ -101,6 +101,7 @@ void tr_FunDec(Node *cur){
     char *name = children->childs[0]->type_content;
     FieldList entry = find(name);
     Operand func_op = new_operand(OP_FUNCTION, 0, 0, name);
+    new_ir(IR_FUNCTION, func_op, NULL, NULL, 0, NULL);
     if(num == 4){//(1)
         FieldList arg = entry->type.u.function.argv;
         for(; arg; arg = arg->tail){
@@ -112,11 +113,14 @@ void tr_FunDec(Node *cur){
                 op = new_operand(OP_ARRAY, 0, 0, arg->name);
             }
             else{
-
+                // printf("%d\n", arg->type.kind);
+                Assert(arg->type.kind == STRUCTURE);
+                op = new_operand(OP_STRUCTURE, 0, 0, arg->name);
             }
             new_ir(IR_PARAM, op, NULL, NULL, 0, NULL);
         }
     }
+    
 }
 
 
@@ -312,75 +316,82 @@ void tr_Exp(Node *cur, Operand place){
             place->size = entry->type.u.array.size;
         }
         else if(entry->type.kind == STRUCTURE){//TBD
-        
+            Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
+            // if(entry->is_arg == 1){
+                place->kind = OP_STRUCTURE;
+                place->u.addr_no = addr_no++;
+                place->structure = entry->type.u.structure;
+                place->offset = entry->type.u.structure->offset + entry->type.u.structure->type.size;
+                // new_ir(IR_ASSIGN, place, struct_op, NULL, 0, NULL);
         }
-        else if((num == 2 && 0 == strcmp(children->childs[0]->name, "NOT"))
+    }
+    else if((num == 2 && 0 == strcmp(children->childs[0]->name, "NOT"))
         || (num == 3 && 0 == strcmp(children->childs[1]->name, "RELOP"))
         || (num == 3 && 0 == strcmp(children->childs[1]->name, "AND"))
         || (num == 3 && 0 == strcmp(children->childs[1]->name, "OR"))){//2,3,4,11
-            Operand l1 = new_label(), l2 = new_label();
-            Operand op_false = new_operand(OP_CONSTANT, 0, 0, NULL);
-            new_ir(IR_ASSIGN, place, op_false, NULL, 0, NULL);
-            tr_Cond(cur, l1, l2);
-            new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
-            Operand op_true = new_operand(OP_CONSTANT, 0, 0, NULL);
-            new_ir(IR_ASSIGN, place, op_true, NULL, 0, NULL);
-            new_ir(IR_LABEL, l2, NULL, NULL, 0, NULL);
+        Operand l1 = new_label(), l2 = new_label();
+        Operand op_false = new_operand(OP_CONSTANT, 0, 0, NULL);
+        new_ir(IR_ASSIGN, place, op_false, NULL, 0, NULL);
+        tr_Cond(cur, l1, l2);
+        new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
+        Operand op_true = new_operand(OP_CONSTANT, 0, 0, NULL);
+        new_ir(IR_ASSIGN, place, op_true, NULL, 0, NULL);
+        new_ir(IR_LABEL, l2, NULL, NULL, 0, NULL);
+    }
+    else if(num == 2 && 0 == strcmp(children->childs[0]->name, "MINUS")){//10
+        Operand t = new_temp();
+        tr_Exp(children->childs[1], t);
+        if(t->kind == OP_ADDRESS){
+            load_val(t);
         }
-        else if(num == 2 && 0 == strcmp(children->childs[0]->name, "MINUS")){//10
-            Operand t = new_temp();
-            tr_Exp(children->childs[1], t);
-            if(t->kind == OP_ADDRESS){
-                load_val(t);
-            }
-            if(t->kind == OP_CONSTANT){
-                place->kind = OP_CONSTANT;
-                place->u.const_value = -1 * t->u.const_value;
+        if(t->kind == OP_CONSTANT){
+            place->kind = OP_CONSTANT;
+            place->u.const_value = -1 * t->u.const_value;
+        }
+        else{
+           Operand op_zero = new_operand(OP_CONSTANT, 0, 0, NULL);
+            new_ir(IR_SUB, place, op_zero, t, 0, NULL);
+        }
+    }
+    else if(num == 3 && 0 == strcmp(children->childs[1]->name, "ASSIGNOP")){//1
+        Operand dst = new_temp();
+        tr_Exp(children->childs[0], dst);
+        Operand src = new_temp();
+        tr_Exp(children->childs[2], src);
+        if(dst->kind ==  OP_ADDRESS || dst->kind == OP_ARRAY){//有疑问
+            if(src->kind == OP_ADDRESS || src->kind == OP_ARRAY){
+                array_copy(dst, src);
             }
             else{
-                Operand op_zero = new_operand(OP_CONSTANT, 0, 0, NULL);
-                new_ir(IR_SUB, place, op_zero, t, 0, NULL);
+                Assert(dst->kind == OP_ADDRESS);
+                new_ir(IR_STORE, dst, src, NULL, 0, NULL);
             }
         }
-        else if(num == 3 && 0 == strcmp(children->childs[1]->name, "ASSIGNOP")){//1
-            Operand dst = new_temp();
-            tr_Exp(children->childs[0], dst);
-            Operand src = new_temp();
-            tr_Exp(children->childs[2], src);
-            if(dst->kind ==  OP_ADDRESS || dst->kind == OP_ARRAY){//有疑问
-                if(src->kind == OP_ADDRESS || src->kind == OP_ARRAY){
-                    array_copy(dst, src);
-                }
-                else{
-                    Assert(dst->kind == OP_ADDRESS);
-                    new_ir(IR_STORE, dst, src, NULL, 0, NULL);
-                }
+        else{
+            if(src->kind == OP_ADDRESS){
+                load_val(src);
             }
-            else{
-                if(src->kind == OP_ADDRESS){
-                    load_val(src);
-                    new_ir(IR_ASSIGN, dst, src, NULL, 0, NULL);
-                }
-            }
-            place->kind = src->kind;
-            place->u = src->u;
+            new_ir(IR_ASSIGN, dst, src, NULL, 0, NULL);
         }
-        else if(num == 3 &&
+        place->kind = src->kind;
+        place->u = src->u;
+    }
+    else if(num == 3 &&
         ( 0 == strcmp(children->childs[1]->name, "PLUS")
         ||0 == strcmp(children->childs[1]->name, "MINUS")
         ||0 == strcmp(children->childs[1]->name, "STAR")
         ||0 == strcmp(children->childs[1]->name, "DIV")
         )){//5,6,7,8
-            Operand t1 = new_temp();
-            tr_Exp(children->childs[0], t1);
-            if(t1->kind == OP_ADDRESS){
-                load_val(t1);
-            }
-            Operand t2 = new_temp();
-            tr_Exp(children->childs[2], t2);
-            if(t2->kind == OP_ADDRESS){
-                load_val(t2);
-            }
+        Operand t1 = new_temp();
+        tr_Exp(children->childs[0], t1);
+        if(t1->kind == OP_ADDRESS){
+            load_val(t1);
+        }
+        Operand t2 = new_temp();
+        tr_Exp(children->childs[2], t2);
+        if(t2->kind == OP_ADDRESS){
+           load_val(t2);
+        }
             int kind;
             int val;
             if(0 == strcmp(children->childs[1]->name, "PLUS")){
@@ -485,8 +496,48 @@ void tr_Exp(Node *cur, Operand place){
                 place->size = t1->type->u.array.size;
             }
         }
-    }
+        else if(num == 3 && 0 == strcmp(children->childs[1]->name, "DOT")){
+            Operand t1 = new_temp();
+            tr_Exp(children->childs[0], t1);
+            char *name = children->childs[2]->type_content;
+            FieldList entry = find(name);
+            // FieldList mem_ptr = find_member_in_structure(t1->structure, name);
+            // switch (entry->type.kind)
+            // {
+            // case STRUCTURE:
+            //     place->kind = OP_STRUCTURE;
+            //     break;
+            // case BASIC:
+            //     place->kind = OP_VARIABLE;
+            // default:
+            //     break;
+            // }
+            // if(place->type->kind == STRUCTURE){
+            //     place->kind = OP_STRUCTURE;
+            // }
+            // else {
+                place->kind = OP_ADDRESS;
+            // }
+            place->u.addr_no = addr_no++;
+            if(entry->offset > 0){
+                Operand offset = new_temp();
+                offset->kind = OP_CONSTANT;
+                offset->u.const_value = entry->offset;
+                new_ir(IR_ADD, place, t1, offset, 0, NULL);
+            }
+            else{
+                new_ir(IR_ASSIGN, place, t1, NULL, 0, NULL);
+            }
+            
+            place->offset = t1->offset + entry->type.size;
+
+            // Operand size = new_temp();
+            // new_ir(IR_ADD, place, t1,  size, 0, NULL);
+            // printf("%d\n", entry->type.size);
+            // printf("%p\n", &    entry->type);
+        }
 }
+
 
 // Args: Exp COMMA Args  
 //     | Exp

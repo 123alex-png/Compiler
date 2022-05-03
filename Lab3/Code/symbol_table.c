@@ -71,6 +71,7 @@ FieldList find_member_in_structure(FieldList f, char *var_name){
     return NULL;
 }
 
+
 int check_function_define(FieldList old, FieldList new){
     struct func *x = &old->type.u.function, *y = &new->type.u.function;
     if(!check_type(x->return_type, y->return_type)) return 0;
@@ -215,4 +216,39 @@ void delete_scope(){
 int is_same_scope(FieldList f){
     ScopeList cur_scope = scope_stack_top();
     return cur_scope == f->scope;
+}
+
+
+//要求3.1
+int compute_size(Type type){
+    int ret = 0;
+    FieldList cur;
+    switch (type->kind)
+    {
+    case BASIC:
+        ret = 4;
+        break;
+    case ARRAY:
+        ret = compute_size(type->u.array.elem) * type->u.array.size;
+    case STRUCTURE_TAG:
+        cur = type->u.structure;
+        for(; cur; cur = cur->tail){
+            ret += compute_size(&cur->type);
+        }
+        break;
+    default:
+        break;
+    }
+    type->size = ret;
+    return ret;
+}
+
+void compute_offset(FieldList field){//成员相对于它所属的结构体的偏移量
+    int offset = field->type.size;
+    FieldList cur = field->type.u.structure;
+    for(; cur; cur = cur->tail){
+        offset -= cur->type.size;
+        cur->offset = offset;
+        // offset += cur->type.size;
+    }
 }

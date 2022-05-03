@@ -1,1 +1,31 @@
-v0 :=#1 
+FUNCTION add : 
+PARAM arr0 
+addr0 := arr0 
+t5 := addr0 + #0 
+t5 := *t5 
+addr2 := arr0 
+t10 := addr2 + #4 
+t10 := *t10 
+t0 := t5 + t10 
+RETURN t0 
+FUNCTION main : 
+DEC arr1 8 
+DEC arr2 8 
+v0 := #0 
+v1 := #0 
+addr4 := &arr1 
+*addr4 := #0 
+addr6 := &arr1 
+addr5 := addr6 + #4 
+*addr5 := #1 
+addr7 := &arr2 
+addr8 := addr7 + #0 
+addr9 := &arr1 
+ARG addr9 
+t33 := CALL add 
+*addr8 := t33 
+addr10 := &arr2 
+t43 := addr10 + #0 
+t43 := *t43 
+WRITE t43 
+RETURN #0 

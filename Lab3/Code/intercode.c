@@ -12,9 +12,12 @@ void add_ir(InterCode ir){
         ir_head = ir_tail = t;
     }
     else{
-        t->next = ir_head;
-        ir_head->prev = t;
-        ir_head = t;
+        // t->next = ir_head;
+        // ir_head->prev = t;
+        // ir_head = t;
+        ir_tail->next = t;
+        t->prev = ir_tail;
+        ir_tail = t;
     }
 }
 
@@ -63,7 +66,9 @@ Operand new_operand(int kind, int val, int number, char* name){
         ret->u.label_no = number;
         break;
     case OP_STRUCTURE:
-        ret->u.struct_no = number;
+        entry = find(name);
+        Assert(entry);
+        ret->u.struct_no = entry->no;
         break;
     default:
         break;
@@ -172,13 +177,13 @@ void print_inter_code(FILE *fp){
             fprintf(fp, ": ");
             break;
         case IR_FUNCTION:
-            fprintf(fp, "FUNCTION");
+            fprintf(fp, "FUNCTION ");
             print_op(cur->code->u.unitary.op, fp);
             fprintf(fp, ": ");
             break;
         case IR_ASSIGN:
             print_op(cur->code->u.assign.left, fp);
-            fprintf(fp, ":=");
+            fprintf(fp, ":= ");
             print_op(cur->code->u.assign.right, fp);
             break;
         case IR_ADD:
@@ -302,7 +307,9 @@ void print_op(Operand op, FILE *fp){
         fprintf(fp, "struct%d ", op->u.struct_no);
         break;
     default:
-        Assert(0);
+        // printf("%d\n", op->kind);
+        // Assert(0);
+        break;
     }   
     
 }

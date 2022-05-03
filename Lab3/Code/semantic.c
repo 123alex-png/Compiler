@@ -169,6 +169,8 @@ Type StructSpecifier(Node *cur){
             // create_scope();
             DefList(children->childs[num-2], new_field);
             // delete_scope();
+            compute_size(&new_field->type);
+            compute_offset(new_field);
         }
         
         ret->u.structure = new_field;

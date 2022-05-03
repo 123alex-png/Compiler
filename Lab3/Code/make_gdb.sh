@@ -2,4 +2,4 @@
 
 gdb  ./parser \
  -ex "break main"\
- -ex "run ../Test/test1.cmm"
+ -ex "run ../Test/optional_example1.cmm"

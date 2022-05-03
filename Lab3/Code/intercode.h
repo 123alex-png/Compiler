@@ -21,6 +21,8 @@ struct Operand_ {
     } u; 
     Type type;
     int size;
+    FieldList structure;
+    int offset;
 }; 
 
 struct InterCode_ { 

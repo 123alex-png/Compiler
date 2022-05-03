@@ -1,21 +1,14 @@
-int func(int b); 
-int func(int a)  
-{ 
-   struct{
-      struct{
-         int x, y;
-      } x;
-   } z;
-   struct{
-      struct{
-         int a, b;
-      } a;
-   } c;
-   z = c;
-   return -1;
+int add(int temp[2]) {
+  return (temp[0] + temp[1]); 
 } 
 int main() 
 { 
-   float z = 1.0;
-   func(z);
+  int op[2]; 
+  int r[1][2]; 
+  int i = 0, j = 0; 
+  op[0] = 0;
+  op[1] = 1;
+  r[0][0] = add(op); 
+  write(r[0][0]);
+  return 0; 
 }
