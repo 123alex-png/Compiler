@@ -1,14 +1,13 @@
-int add(int temp[2]) {
-  return (temp[0] + temp[1]); 
-} 
-int main() 
-{ 
-  int op[2]; 
-  int r[1][2]; 
-  int i = 0, j = 0; 
-  op[0] = 0;
-  op[1] = 1;
-  r[0][0] = add(op); 
-  write(r[0][0]);
-  return 0; 
+struct Product {
+    int weight;
+    int price;
+};
+int main() {
+    struct Product p1;
+    int z;
+    p1.weight = 123;
+    p1.price = 56;
+    z = p1.price * p1.weight;
+    //write(p1.weight * p1.price);
+    return 0;
 }

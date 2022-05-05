@@ -124,6 +124,7 @@ InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char
 }
 
 int get_size(Type type){
+    if(type == NULL) return 0;
     int ret = 0;
     if(type->kind == BASIC){
         ret = 4;

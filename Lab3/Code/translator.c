@@ -316,7 +316,7 @@ void tr_Exp(Node *cur, Operand place){
             place->size = entry->type.u.array.size;
         }
         else if(entry->type.kind == STRUCTURE){//TBD
-            Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
+            // Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
             // if(entry->is_arg == 1){
                 place->kind = OP_STRUCTURE;
                 place->u.addr_no = addr_no++;
@@ -393,28 +393,54 @@ void tr_Exp(Node *cur, Operand place){
            load_val(t2);
         }
             int kind;
-            int val;
-            if(0 == strcmp(children->childs[1]->name, "PLUS")){
-                kind = IR_ADD;
-                val = t1->u.const_value + t2->u.const_value;
-            }
-            else if(0 == strcmp(children->childs[1]->name, "MINUS")){
-                kind = IR_SUB;
-                val = t1->u.const_value - t2->u.const_value;
-            }
-            else if(0 == strcmp(children->childs[1]->name, "STAR")){
-                kind = IR_MUL;
-                val = t1->u.const_value * t2->u.const_value;
-            }
-            else{
-                kind = IR_DIV;
-                val = t1->u.const_value / t2->u.const_value;
-            }
+            // int val;
             if(t1->kind == OP_CONSTANT && t2->kind == OP_CONSTANT){
                 place->kind = OP_CONSTANT;
+                int val;
+                if(0 == strcmp(children->childs[1]->name, "PLUS")){
+                    // kind = IR_ADD;
+                    val = t1->u.const_value + t2->u.const_value;
+                }
+                else if(0 == strcmp(children->childs[1]->name, "MINUS")){
+                    // kind = IR_SUB;
+                    val = t1->u.const_value - t2->u.const_value;
+                }
+                else if(0 == strcmp(children->childs[1]->name, "STAR")){
+                    // kind = IR_MUL;
+                    val = t1->u.const_value * t2->u.const_value;
+                }
+                else{
+                    // kind = IR_DIV;
+                    // val = t1->u.const_value / t2->u.const_value;
+                    int l = t1->u.const_value;
+                    int r = t2->u.const_value;
+                    if (l < 0 && r > 0) {
+                        val = (l - r + 1) / r;
+                    } else if (l > 0 && r < 0) {
+                        val = (l - r - 1) / r;
+                    } else {
+                        val = r ? l / r : 0;
+                    }
+                }
                 place->u.const_value = val;
             }
             else{
+                if(0 == strcmp(children->childs[1]->name, "PLUS")){
+                    kind = IR_ADD;
+                    // val = t1->u.const_value + t2->u.const_value;
+                }
+                else if(0 == strcmp(children->childs[1]->name, "MINUS")){
+                    kind = IR_SUB;
+                    // val = t1->u.const_value - t2->u.const_value;
+                }
+                else if(0 == strcmp(children->childs[1]->name, "STAR")){
+                    kind = IR_MUL;
+                    // val = t1->u.const_value * t2->u.const_value;
+                }
+                else{
+                    kind = IR_DIV;
+                    // val = t1->u.const_value / t2->u.const_value;
+                }
                 new_ir(kind, place, t1, t2, 0, NULL);
             }
         }
@@ -473,7 +499,7 @@ void tr_Exp(Node *cur, Operand place){
             place->kind = OP_ADDRESS;
             place->u.addr_no = addr_no++;
             if(t1->kind == OP_ARRAY){
-                if(offset->u.const_value == 0){
+                if(offset->kind == OP_CONSTANT && offset->u.const_value == 0){
                     new_ir(IR_ADDR, place, t1, NULL, 0, NULL);
                 }
                 else{
@@ -625,14 +651,20 @@ void tr_Cond(Node *cur, Operand true_label, Operand false_label){
 }
 
 void array_copy(Operand dst, Operand src){
-    Operand dst_addr = get_addr(dst), src_addr = get_addr(src);
+    Operand dst_addr = dst, src_addr = src;
+    if(dst_addr->kind == OP_ARRAY){
+        dst_addr = get_addr(dst_addr);
+    }
+    if(src_addr->kind == OP_ARRAY){
+        src_addr = get_addr(src_addr);
+    }
     int dst_size = get_size(dst->type) * dst->size, src_size = get_size(src->type) * src->size;
     int size = min(dst_size, src_size);
     Operand left = new_addr(), right = new_addr(), tmp = new_temp();
     // Operand tmp = new_temp();
     new_ir(IR_LOAD, tmp, src_addr, NULL, 0, NULL);
     new_ir(IR_STORE, dst_addr, tmp, NULL, 0, NULL);
-    for(int i = 0; i < size; i += 4){
+    for(int i = 4; i < size; i += 4){
         Operand offset = new_operand(OP_CONSTANT, i, 0, NULL);
         new_ir(IR_ADD, left, dst_addr, offset, 0, NULL);
         new_ir(IR_ADD, right, src_addr, offset, 0, NULL);
