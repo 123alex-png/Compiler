@@ -1,0 +1,96 @@
+FUNCTION main : 
+READ t2 
+var0 := t2 
+READ t5 
+var1 := t5 
+READ t8 
+var2 := t8 
+t9 := var0 + var1 
+IF t9 > var2 GOTO label4 
+GOTO label1 
+LABEL label4 : 
+t13 := var1 + var2 
+IF t13 > var0 GOTO label3 
+GOTO label1 
+LABEL label3 : 
+t17 := var0 + var2 
+IF t17 > var1 GOTO label0 
+GOTO label1 
+LABEL label0 : 
+t24 := var0 + var1 
+t23 := t24 + var2 
+var3 := t23 
+IF var0 == var1 GOTO label8 
+GOTO label6 
+LABEL label8 : 
+IF var0 == var2 GOTO label5 
+GOTO label6 
+LABEL label5 : 
+var4 := #1 
+GOTO label7 
+LABEL label6 : 
+IF var0 == var1 GOTO label9 
+GOTO label13 
+LABEL label13 : 
+IF var0 == var2 GOTO label9 
+GOTO label12 
+LABEL label12 : 
+IF var1 == var2 GOTO label9 
+GOTO label10 
+LABEL label9 : 
+var4 := #2 
+GOTO label11 
+LABEL label10 : 
+t44 := #0 
+t46 := var0 * var0 
+t49 := var1 * var1 
+t45 := t46 + t49 
+t52 := var2 * var2 
+IF t45 == t52 GOTO label19 
+GOTO label20 
+LABEL label19 : 
+t44 := #1 
+LABEL label20 : 
+IF t44 != #0 GOTO label14 
+GOTO label18 
+LABEL label18 : 
+t55 := #0 
+t57 := var0 * var0 
+t60 := var2 * var2 
+t56 := t57 + t60 
+t63 := var1 * var1 
+IF t56 == t63 GOTO label21 
+GOTO label22 
+LABEL label21 : 
+t55 := #1 
+LABEL label22 : 
+IF t55 != #0 GOTO label14 
+GOTO label17 
+LABEL label17 : 
+t66 := #0 
+t68 := var1 * var1 
+t71 := var2 * var2 
+t67 := t68 + t71 
+t74 := var0 * var0 
+IF t67 == t74 GOTO label23 
+GOTO label24 
+LABEL label23 : 
+t66 := #1 
+LABEL label24 : 
+IF t66 != #0 GOTO label14 
+GOTO label15 
+LABEL label14 : 
+var4 := #3 
+GOTO label16 
+LABEL label15 : 
+var4 := #0 
+LABEL label16 : 
+LABEL label11 : 
+LABEL label7 : 
+WRITE var4 
+WRITE var3 
+GOTO label2 
+LABEL label1 : 
+WRITE #-1 
+LABEL label2 : 
+RETURN #0 

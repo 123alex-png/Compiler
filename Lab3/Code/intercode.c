@@ -133,9 +133,10 @@ int get_size(Type type){
         ret = type->u.array.size * get_size(type->u.array.elem);
     }
     else if(type->kind == STRUCTURE){
-        for(FieldList cur = type->u.structure; cur; cur = cur->tail){
-            ret += get_size(&cur->type);
-        }
+        // for(FieldList cur = type->u.structure; cur; cur = cur->tail){
+        //     ret += get_size(&cur->type);
+        // }
+        ret = type->u .structure ->type.size;
     }
     else{
         Assert(0);

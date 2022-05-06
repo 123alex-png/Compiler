@@ -230,13 +230,18 @@ int compute_size(Type type){
         break;
     case ARRAY:
         ret = compute_size(type->u.array.elem) * type->u.array.size;
+        break;
     case STRUCTURE_TAG:
         cur = type->u.structure;
         for(; cur; cur = cur->tail){
             ret += compute_size(&cur->type);
         }
         break;
+    case STRUCTURE:
+        ret = type->u.structure->type.size;
+        break;
     default:
+        Assert(0);
         break;
     }
     type->size = ret;

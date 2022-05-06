@@ -80,7 +80,10 @@ Operand tr_VarDec(Node *cur){
             ret = new_operand(OP_VARIABLE, 0, 0, name);
         }
         else if(entry->type.kind == STRUCTURE){
-            //似乎不需要
+            ret = new_operand(OP_STRUCTURE, 0, 0, name);
+            ret->structure = entry->type.u.structure;
+            int size =  entry->type.u.structure->type.size;
+            new_ir(IR_DEC, ret, NULL, NULL, size, NULL);
         }
         else{
             Assert(0);
@@ -302,8 +305,8 @@ void tr_Exp(Node *cur, Operand place){
             place->u.var_no = entry->no;
         }
         else if(entry->type.kind == ARRAY){
-            Operand array_op = new_operand(OP_ARRAY, 0, 0, entry->name);
             if(entry->is_arg == 1){
+                Operand array_op = new_operand(OP_ARRAY, 0, 0, entry->name);
                 place->kind = OP_ADDRESS;
                 place->u.addr_no = addr_no++;
                 new_ir(IR_ASSIGN, place, array_op, NULL, 0, NULL);
@@ -317,12 +320,23 @@ void tr_Exp(Node *cur, Operand place){
         }
         else if(entry->type.kind == STRUCTURE){//TBD
             // Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
-            // if(entry->is_arg == 1){
-                place->kind = OP_STRUCTURE;
+            // // if(entry->is_arg == 1){
+            //     place->kind = OP_ADDRESS;
+            //     place->u.struct_no = addr_no++;;
+            //     place->structure = entry->type.u.structure;
+            //     place->offset = entry->type.u.structure->offset + entry->type.u.structure->type.size;
+            //     new_ir(IR_ADDR, place, struct_op, NULL, 0, NULL);
+            if(entry->is_arg == 1){
+                Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
+                place->kind = OP_ADDRESS;
                 place->u.addr_no = addr_no++;
-                place->structure = entry->type.u.structure;
-                place->offset = entry->type.u.structure->offset + entry->type.u.structure->type.size;
-                // new_ir(IR_ASSIGN, place, struct_op, NULL, 0, NULL);
+                new_ir(IR_ASSIGN, place, struct_op, NULL, 0, NULL);
+            }
+            else{
+                place->kind = OP_STRUCTURE;
+                place->u.struct_no = entry->no;
+            }
+            place->structure = entry->type.u.structure;
         }
     }
     else if((num == 2 && 0 == strcmp(children->childs[0]->name, "NOT"))
@@ -334,7 +348,7 @@ void tr_Exp(Node *cur, Operand place){
         new_ir(IR_ASSIGN, place, op_false, NULL, 0, NULL);
         tr_Cond(cur, l1, l2);
         new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
-        Operand op_true = new_operand(OP_CONSTANT, 0, 0, NULL);
+        Operand op_true = new_operand(OP_CONSTANT, 1, 0, NULL);
         new_ir(IR_ASSIGN, place, op_true, NULL, 0, NULL);
         new_ir(IR_LABEL, l2, NULL, NULL, 0, NULL);
     }
@@ -517,7 +531,7 @@ void tr_Exp(Node *cur, Operand place){
                 place->size = 0;
             }
             else{
-                Assert(t1->type->kind == ARRAY);
+                // Assert(t1->type->kind == ARRAY);
                 place->type = t1->type->u.array.elem;
                 place->size = t1->type->u.array.size;
             }
@@ -527,34 +541,36 @@ void tr_Exp(Node *cur, Operand place){
             tr_Exp(children->childs[0], t1);
             char *name = children->childs[2]->type_content;
             FieldList entry = find(name);
-            // FieldList mem_ptr = find_member_in_structure(t1->structure, name);
-            // switch (entry->type.kind)
-            // {
-            // case STRUCTURE:
-            //     place->kind = OP_STRUCTURE;
-            //     break;
-            // case BASIC:
-            //     place->kind = OP_VARIABLE;
-            // default:
-            //     break;
-            // }
-            // if(place->type->kind == STRUCTURE){
-            //     place->kind = OP_STRUCTURE;
-            // }
-            // else {
-                place->kind = OP_ADDRESS;
-            // }
+            
+            place->kind = OP_ADDRESS;
             place->u.addr_no = addr_no++;
-            if(entry->offset > 0){
-                Operand offset = new_temp();
-                offset->kind = OP_CONSTANT;
-                offset->u.const_value = entry->offset;
-                new_ir(IR_ADD, place, t1, offset, 0, NULL);
+
+            Operand offset = new_temp();
+            offset->kind = OP_CONSTANT;
+            offset->u.const_value = entry->offset;
+
+            if(t1->kind == OP_STRUCTURE){
+                if(entry->offset > 0){
+                    Operand base = new_addr();
+                    new_ir(IR_ADDR, base, t1, NULL, 0, NULL);    
+                    new_ir(IR_ADD, place, base, offset, 0, NULL);
+                }
+                else{
+                    new_ir(IR_ADDR, place, t1, NULL, 0, NULL);
+                }
             }
             else{
-                new_ir(IR_ASSIGN, place, t1, NULL, 0, NULL);
+                Assert(t1->kind == OP_ADDRESS);
+                new_ir(IR_ADD, place, t1, offset, 0, NULL);
             }
             
+            
+            if(entry->type.kind == ARRAY){
+                place->type = entry->type.u.array.elem;
+            }
+            else if(entry->type.kind == STRUCTURE){
+                place->structure = entry->type.u.structure;
+            }
             place->offset = t1->offset + entry->type.size;
 
             // Operand size = new_temp();
@@ -586,7 +602,7 @@ void tr_Args(Node *cur, int is_write){
         new_ir(IR_WRITE, t, NULL, NULL, 0, NULL);
     }
     else{
-        if(t->kind == OP_ARRAY){
+        if(t->kind == OP_ARRAY || t->kind == OP_STRUCTURE){
             t = get_addr(t);
         }
         else if(t->kind == OP_ADDRESS){
@@ -608,7 +624,8 @@ void tr_Cond(Node *cur, Operand true_label, Operand false_label){
     child_node *children = get_childs(cur);
     int num = children->num;
     Assert(num == cur->right_num);
-    if(0 == strcmp(children->childs[1]->name, "RELOP")){//1
+    
+    if(num == 3 && 0 == strcmp(children->childs[1]->name, "RELOP")){//1
         Operand t1 = new_temp();
         tr_Exp(children->childs[0], t1);
         if(t1->kind == OP_ADDRESS){
@@ -623,16 +640,16 @@ void tr_Cond(Node *cur, Operand true_label, Operand false_label){
         new_ir(IR_IF_GOTO, t1, t2, true_label, 0, op);
         new_ir(IR_GOTO, false_label, NULL, NULL, 0, NULL);
     }
-    else if(0 == strcmp(children->childs[0]->name, "NOT")){//2
+    else if(num == 2 && 0 == strcmp(children->childs[0]->name, "NOT")){//2
         tr_Cond(children->childs[1], false_label, true_label);
     }
-    else if(0 == strcmp(children->childs[1]->name, "AND")){//3
+    else if(num == 3 && 0 == strcmp(children->childs[1]->name, "AND")){//3
         Operand l1 = new_label();
         tr_Cond(children->childs[0], l1, false_label);
         new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
         tr_Cond(children->childs[2], true_label, false_label);
     }
-    else if(0 == strcmp(children->childs[1]->name, "OR")){//4
+    else if(num == 3 && 0 == strcmp(children->childs[1]->name, "OR")){//4
         Operand l1 = new_label();
         tr_Cond(children->childs[0], true_label, l1);
         new_ir(IR_LABEL, l1, NULL, NULL, 0, NULL);
