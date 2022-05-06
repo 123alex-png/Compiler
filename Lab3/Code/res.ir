@@ -1,45 +1,21 @@
-FUNCTION nonsense : 
-PARAM arr2 
-PARAM struct1 
-addr0 := arr2 
-addr1 := arr2 
-addr2 := addr1 + #280 
-addr3 := addr2 + #16 
-addr4 := addr3 + #16 
-t18 := addr4 + #0 
-t18 := *t18 
-t17 := t18 * #56 
-addr6 := addr0 + t17 
-addr7 := addr6 + #16 
-addr8 := addr7 + #32 
-addr9 := addr8 + #0 
-addr10 := struct1 
-t27 := addr10 + #0 
-t27 := *t27 
-t23 := t27 + #6 
-*addr9 := t23 
-RETURN #0 
 FUNCTION main : 
-DEC arr3 5600 
-addr13 := &arr3 
-addr12 := addr13 + #280 
-addr14 := addr12 + #16 
-addr15 := addr14 + #16 
-addr16 := addr15 + #0 
-*addr16 := #3 
-addr18 := &arr3 
-addr17 := addr18 + #280 
-addr19 := addr17 + #16 
-addr20 := addr19 + #16 
-ARG addr20 
-addr21 := &arr3 
-ARG addr21 
-t43 := CALL nonsense 
-addr23 := &arr3 
-addr22 := addr23 + #168 
-addr24 := addr22 + #16 
-addr25 := addr24 + #32 
-t66 := addr25 + #0 
-t66 := *t66 
-WRITE t66 
+v3 := #0 
+v0 := #5 
+t7 := v0 * v0 
+t10 := v0 + #2 
+t6 := t7 * t10 
+v1 := t6 
+WRITE v1 
+t18 := v1 / v0 
+t17 := t18 + #1 
+v2 := t17 
+WRITE v2 
+t28 := v0 + v1 
+t31 := v2 * #3 
+t27 := t28 - t31 
+t35 := v1 / v0 
+t34 := t35 - #4 
+t26 := t27 + t34 
+v3 := t26 
+WRITE v3 
 RETURN #0 

@@ -1,6 +1,7 @@
 #include "intercode.h"
 #include "symbol_table.h"
 #include "common.h"
+
 InterCodes ir_head = NULL, ir_tail = NULL;
 int temp_no, addr_no, label_no;
 void add_ir(InterCode ir){
@@ -12,9 +13,6 @@ void add_ir(InterCode ir){
         ir_head = ir_tail = t;
     }
     else{
-        // t->next = ir_head;
-        // ir_head->prev = t;
-        // ir_head = t;
         ir_tail->next = t;
         t->prev = ir_tail;
         ir_tail = t;
@@ -133,9 +131,6 @@ int get_size(Type type){
         ret = type->u.array.size * get_size(type->u.array.elem);
     }
     else if(type->kind == STRUCTURE){
-        // for(FieldList cur = type->u.structure; cur; cur = cur->tail){
-        //     ret += get_size(&cur->type);
-        // }
         ret = type->u .structure ->type.size;
     }
     else{
@@ -169,6 +164,7 @@ Operand get_addr(Operand addr){
 }
 
 void print_inter_code(FILE *fp){
+
     InterCodes cur = ir_head;
     for(; cur; cur = cur->next){
         Assert(cur->code);

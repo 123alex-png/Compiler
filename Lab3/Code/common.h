@@ -3,7 +3,7 @@
 
 #include <assert.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define Assert(...) \

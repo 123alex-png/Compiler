@@ -22,7 +22,6 @@ struct Operand_ {
     Type type;
     int size;
     FieldList structure;
-    int offset;
 }; 
 
 struct InterCode_ { 
@@ -72,6 +71,10 @@ struct InterCodes_ {
     InterCode code;
     InterCodes prev, next;
 };
+
+void add_ir(InterCode ir);
+void delete_ir(InterCodes ir);
+
 InterCode new_ir(int kind, Operand op1, Operand op2, Operand op3, int size, char* relop);  
 Operand new_operand(int kind, int val, int number, char* name);
 Operand new_temp();

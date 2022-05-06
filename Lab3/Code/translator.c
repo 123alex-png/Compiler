@@ -318,14 +318,7 @@ void tr_Exp(Node *cur, Operand place){
             place->type = entry->type.u.array.elem;
             place->size = entry->type.u.array.size;
         }
-        else if(entry->type.kind == STRUCTURE){//TBD
-            // Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
-            // // if(entry->is_arg == 1){
-            //     place->kind = OP_ADDRESS;
-            //     place->u.struct_no = addr_no++;;
-            //     place->structure = entry->type.u.structure;
-            //     place->offset = entry->type.u.structure->offset + entry->type.u.structure->type.size;
-            //     new_ir(IR_ADDR, place, struct_op, NULL, 0, NULL);
+        else if(entry->type.kind == STRUCTURE){
             if(entry->is_arg == 1){
                 Operand struct_op = new_operand(OP_STRUCTURE, 0, 0, entry->name);
                 place->kind = OP_ADDRESS;
@@ -571,12 +564,6 @@ void tr_Exp(Node *cur, Operand place){
             else if(entry->type.kind == STRUCTURE){
                 place->structure = entry->type.u.structure;
             }
-            place->offset = t1->offset + entry->type.size;
-
-            // Operand size = new_temp();
-            // new_ir(IR_ADD, place, t1,  size, 0, NULL);
-            // printf("%d\n", entry->type.size);
-            // printf("%p\n", &    entry->type);
         }
 }
 

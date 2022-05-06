@@ -1,28 +1,14 @@
-//This sample aims to test the correctness of implementation
-//1. Nested array and structure declare, usage and pass to function
-struct Operands
-{
-    int o1;
-    int o2;
-};
-
-struct Op
-{
-    int p1[2];
-    struct Operands p2;
-	struct Operands p3[5];
-};
-
-int nonsense(struct Op temp1[100], struct Operands temp2) {
-	temp1[temp1[5].p3[2].o1].p3[4].o1 = temp2.o1+6;
-	return 0;
-}
-
 int main()
 {
-	struct Op a[100];
-	a[5].p3[2].o1 = 3;
-	nonsense(a, a[5].p3[2]);
-	write(a[3].p3[4].o1);
-    return 0;
+	int a,b,c;
+	int final = 0;
+	a = 5;
+	//b = 10;
+	b = a*a*(a+2);
+	write(b);
+	c = b/a+1;
+	write(c);
+	final = a+b-c*3+(b/a-4);
+	write(final);
+	return 0;
 }
