@@ -1,8 +1,8 @@
 #include "translator.h"
 #include "common.h"
 extern InterCodes ir_head, ir_tail;
-// extern int var_cnt, array_cnt, func_cnt, struct_cnt;
 extern int temp_no, addr_no, label_no;
+
 //Program: ExtDefList
 void tr_Program(Node *cur){
     if(cur == NULL) return;
@@ -27,7 +27,6 @@ void tr_ExtDefList(Node *cur){
 void tr_ExtDef(Node *cur){
     if(cur == NULL) return;
     child_node *children = get_childs(cur);
-    // int num = children->num;
     Assert(0 == strcmp(children->childs[0]->name, "Specifier"));
     if(cur->right_num == 2){//(2)
         Assert(0 == strcmp(children->childs[1]->name, "SEMI"));
@@ -36,7 +35,6 @@ void tr_ExtDef(Node *cur){
         Assert(cur->right_num == 3);
         if(0 == strcmp(children->childs[1]->name, "ExtDecList")){//(1)
             Assert(0 == strcmp(children->childs[2]->name, "SEMI"));
-            // tr_ExtDecList(children->childs[1]);
         }
         else{
             if(0 == strcmp(children->childs[2]->name, "CompSt")){//(3)define
@@ -214,7 +212,6 @@ void tr_DefList(Node *cur){
     child_node *children = get_childs(cur);
     int num = children->num;
     // Assert(num == cur->right_num);
-    // Node *n1 = find_child(cur, "Def"), *n2 = find_child(cur, "DefList");
     tr_Def(children->childs[0]);
     tr_DefList(children->childs[1]);
 }
