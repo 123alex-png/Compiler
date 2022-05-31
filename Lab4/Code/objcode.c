@@ -8,9 +8,9 @@ static Stackframe head, tail;
 FILE *out_file;
 struct Reg_ reg[REG_NUM];
 
-char *name[] = {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2"
-, "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8"
-, "t9", "k0", "k1", "gp", "sp", "fp", "ra"};
+char *name[] = {"$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3", "$t0", "$t1", "$t2"
+, "$t3", "$t4", "$t5", "$t6", "$t7", "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7", "$t8"
+, "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"};
 void init_regs(){
     for(int i = 0; i < REG_NUM; i++){
         reg[i].name = name[i];
@@ -43,6 +43,11 @@ void init_environment() {
     fprintf(out_file, "  move $v0, $0\n");
     fprintf(out_file, "  jr $ra\n");
     fprintf(out_file, "\n");
+
+    head = (Stackframe)malloc(sizeof(struct Stackframe_));
+    head->next = NULL;
+    fp = sp = head;
+    head->no = -1;
 }
 
 int get_reg(InterCode ir, Operand op){
@@ -88,6 +93,7 @@ int get_reg(InterCode ir, Operand op){
         else{
             ret = 10;
         }
+        break;
     case IR_RETURN:
         ret = 8;
         break;
@@ -128,18 +134,18 @@ void load_reg(int reg_no, Operand op){
     case OP_VARIABLE:
     case OP_TEMP:
         offset = op2offset(op);
-        fprintf(out_file, "   lw %s, %d($out_file)\n", reg[reg_no].name, -offset);
+        fprintf(out_file, "   lw %s, %d($fp)\n", reg[reg_no].name, -offset);
         break;
     case OP_ADDRESS:
     case OP_ARRAY:
         offset = op2offset(op);
-        fprintf(out_file, "   la %s, %d($out_file)\n", reg[reg_no].name, -offset);
+        fprintf(out_file, "   la %s, %d($fp)\n", reg[reg_no].name, -offset);
         break;
     case OP_CONSTANT:
         fprintf(out_file, "   li %s, %d\n", reg[reg_no].name, op->u.const_value);
         break;
     case OP_FUNCTION:
-        fprintf(out_file, "   la %s, %s\n", reg[reg_no].name, -offset);
+        fprintf(out_file, "   la %s, %s\n", reg[reg_no].name, op->u.func_name);
         break;
     case OP_LABEL:
         fprintf(out_file, "   la %s, label%d\n", reg[reg_no].name, op->u.label_no);
@@ -154,7 +160,7 @@ void load_reg(int reg_no, Operand op){
 void store_reg_mem(int reg_no, Operand op){
     Assert(op->kind == OP_TEMP || op->kind == OP_VARIABLE);
     int offset = op2offset(op);
-    fprintf(out_file, "   sw %s, %d($out_file)\n", reg[reg_no].name, -offset);
+    fprintf(out_file, "   sw %s, %d($fp)\n", reg[reg_no].name, -offset);
 }
 
 void push_op(Operand op, int offset){
@@ -166,6 +172,7 @@ void push_op(Operand op, int offset){
     sp->next = new_stack_frame;
     sp = new_stack_frame;
 }
+
 
 void pop_cur_stack(){
     Stackframe cur = head;
@@ -180,11 +187,11 @@ void pop_cur_stack(){
     sp = cur;
 }
 
-void push_var_op(Operand op, int offset, int dsize){
+void push_var_op(Operand op, int *offset, int dsize){
     // Assert(op->kind == OP_VARIABLE || op->kind == OP_TEMP);
     if(find_op(op) == 0){
-        offset += dsize;
-        push_op(op, offset);
+        *offset += dsize;
+        push_op(op, *offset);
     }
 }
 
@@ -228,10 +235,10 @@ void create_new_stack(InterCodes start){
             break;
         }
     }
-    fprintf(out_file, "addi $sp, $sp, -%d\n", offset);
-    fprintf(out_file, "sw $ra, %d($sp)\n", offset-4);
-    fprintf(out_file, "sw $out_file, %d($sp)\n", offset-8);
-    fprintf(out_file, "addi $out_file, $sp, %d", offset);
+    fprintf(out_file, "   addi $sp, $sp, -%d\n", offset);
+    fprintf(out_file, "   sw $ra, %d($sp)\n", offset-4);
+    fprintf(out_file, "   sw $fp, %d($sp)\n", offset-8);
+    fprintf(out_file, "   addi $fp, $sp, %d\n", offset);
 }
 
 void new_objcode(InterCode t, InterCodes code){
@@ -296,9 +303,9 @@ void new_objcode(InterCode t, InterCodes code){
 }
 
 void gen_objcode(FILE *file){
+    out_file = file;
     init_regs();
     init_environment();
-    out_file = file;
     InterCodes cur = ir_head;
     for(; cur; cur = cur->next){
         Assert(cur->code);
@@ -308,8 +315,8 @@ void gen_objcode(FILE *file){
 
 void new_code_ir_function(InterCode ir, InterCodes code){
     char *func_name = ir->u.unitary.op->u.func_name;
-    pop_op();
-    fprintf("%s:\n", func_name);
+    pop_cur_stack();
+    fprintf(out_file, "%s:\n", func_name);
     if(0 == strcmp("main", func_name)){
         create_new_stack(code);
     }
@@ -326,27 +333,28 @@ void new_code_ir_assign(InterCode ir){
     load_reg(right_reg, right);
     fprintf(out_file, "   move %s, %s\n", reg[left_reg].name, reg[right_reg].name);
     store_reg_mem(left_reg, left);
-    store_reg_mem(right_reg, right);
+    // store_reg_mem(right_reg, right);
 }
 
 void new_code_ir_arith(InterCode ir){
     Operand res = ir->u.biassign.res, op1 = ir->u.biassign.op1, op2 = ir->u.biassign.op2;
     int res_reg = get_reg(ir, res), op1_reg = get_reg(ir, op1), op2_reg = get_reg(ir, op2);
+    Assert(op2_reg != op1_reg);
     load_reg(op1_reg, op1);
     load_reg(op2_reg, op2);
     switch (ir->kind)
     {
     case IR_ADD:
-        fprintf(out_file, "   add %s, %s, %s", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
+        fprintf(out_file, "   add %s, %s, %s\n", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
         break;
     case IR_SUB:
-        fprintf(out_file, "   sub %s, %s, %s", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
+        fprintf(out_file, "   sub %s, %s, %s\n", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
         break;
     case IR_MUL:
-        fprintf(out_file, "   mul %s, %s, %s", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
+        fprintf(out_file, "   mul %s, %s, %s\n", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
         break;
     case IR_DIV:
-        fprintf(out_file, "   div %s, %s, %s", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
+        fprintf(out_file, "   div %s, %s, %s\n", reg[res_reg].name, reg[op1_reg].name, reg[op2_reg].name);   
         fprintf(out_file, "   mflo %s\n", reg[res_reg].name);
         break;
     default:
@@ -361,8 +369,9 @@ void new_code_ir_if_goto(InterCode ir){
     int op1_reg = get_reg(ir, op1), op2_reg = get_reg(ir, op2);
     load_reg(op1_reg, op1);
     load_reg(op2_reg, op2);
-    char *relop_order = relop2order(relop);
-    fprintf(out_file, "   %s %s, %s, label %d\n", relop_order, reg[op1_reg].name, reg[op2_reg].name, op3->u.label_no);
+    char relop_order[4];
+    relop2order(relop, relop_order);
+    fprintf(out_file, "   %s %s, %s, label%d\n", relop_order, reg[op1_reg].name, reg[op2_reg].name, op3->u.label_no);
 }
 
 void new_code_ir_goto(InterCode ir){
@@ -374,12 +383,12 @@ void new_code_ir_return(InterCode ir){
 	int value = ret_op->u.const_value;
 	int reg_no = get_reg(ir, NULL);;
 	load_reg(reg_no, ret_op);
-    fprintf(out_file,"  move $v0, %s\n",reg[reg_no].name);
+    fprintf(out_file,"   move $v0, %s\n",reg[reg_no].name);
 
-	fprintf(out_file, "  move $sp, $out_file\n");
-	fprintf(out_file, "  lw $ra, -4($out_file)\n");
-	fprintf(out_file, "  lw $out_file, -8($out_file)\n");
-	fprintf(out_file, "  jr $ra\n");
+	fprintf(out_file, "   move $sp, $fp\n");
+	fprintf(out_file, "   lw $ra, -4($fp)\n");
+	fprintf(out_file, "   lw $fp, -8($fp)\n");
+	fprintf(out_file, "   jr $ra\n");
 }
 
 void new_code_ir_arg(InterCode ir){
@@ -403,25 +412,24 @@ void new_code_ir_dec(InterCode ir){
 
 }
 
-void new_code_ir_arg(InterCode ir){
-
-}
-
-void new_code_ir_call(InterCode ir){
-
-}
 
 void new_code_ir_read(InterCode ir){
+    int temp_reg = 8, read_reg = 2;
+    fprintf(out_file,"   jal read\n");
+    fprintf(out_file,"   move %s, %s\n",reg[temp_reg].name,reg[read_reg].name);
+    store_reg_mem(temp_reg, ir->u.unitary.op);
 
 }
 
 void new_code_ir_write(InterCode ir){
-
+    int temp_reg = 8, write_reg = 4;
+    load_reg(temp_reg, ir->u.unitary.op);
+    fprintf(out_file,"   move %s, %s\n",reg[write_reg].name,reg[temp_reg].name);
+    fprintf(out_file,"   jal write\n");
 }
 
 
-char *relop2order(char *relop){
-    char ret[4];
+void relop2order(char *relop, char *ret){
     if(0 == strcmp(relop, "==")){
         sprintf(ret, "beq");
     }
@@ -440,5 +448,4 @@ char *relop2order(char *relop){
     else if(0 == strcmp(relop, "<=")){
         sprintf(ret, "ble");
     }
-    return ret;
 }

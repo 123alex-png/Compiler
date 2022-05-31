@@ -4,6 +4,7 @@
 #include "semantic.h"
 #include "intercode.h"
 #include "translator.h"
+#include "objcode.h"
 extern FILE *yyin;
 extern Node *root;
 int yylex();
@@ -37,8 +38,16 @@ int main(int argc, char** argv){
       if(argc == 2)
         print_inter_code(stdout);
       else{
-        FILE *fp = fopen(argv[2], "w+");
+
+        FILE *fp = fopen("output.ir", "w+");
         print_inter_code(fp);
+      }
+      if(argc == 2){
+        gen_objcode(stdout);
+      }
+      else{
+        FILE *fp = fopen(argv[2], "w+");
+        gen_objcode(fp);
       }
     }
   }

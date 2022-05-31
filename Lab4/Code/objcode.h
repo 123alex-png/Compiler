@@ -23,7 +23,7 @@ struct Stackframe_ {
 //     Stack next;
 // };
 
-void gen_objcode();
+void gen_objcode(FILE *file);
 void new_objcode(InterCode t, InterCodes code);
 void new_code_ir_label(InterCode ir);
 void new_code_ir_function(InterCode ir, InterCodes code);
@@ -43,6 +43,6 @@ void new_code_ir_read(InterCode ir);
 void new_code_ir_write(InterCode ir);
 
 
-char *relop2order(char *relop);
+void relop2order(char *relop, char *ret);
 void create_new_stack(InterCodes start);
 #endif
